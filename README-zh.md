@@ -37,7 +37,7 @@ CocoaPods的使用请参考：[CocoaPods Guides](https://guides.cocoapods.org/)
 在项目的`PrefixHeader.pch`文件添加以下内容：
 
 ```objc
-#import <TuyaSmartKit/TuyaSmartKit.h>
+#import <TuyaSmartHomeKit/TuyaSmartKit.h>
 ```
 
 打开`AppDelegate.m`文件，在`[AppDelegate application:didFinishLaunchingWithOptions:]`方法中初始化SDK：

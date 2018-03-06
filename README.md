@@ -37,7 +37,7 @@ For the instructions of CocoaPods, please refer to: [CocoaPods Guides](https://g
 Add the following to the project file `PrefixHeader.pch`：
 
 ```objc
-#import <TuyaSmartKit/TuyaSmartKit.h>
+#import <TuyaSmartHomeKit/TuyaSmartKit.h>
 ```
 
 Open file `AppDelegate.m`，and use the `App ID` and `App Secret` obtained from the development platform in the `[AppDelegate application:didFinishLaunchingWithOptions:]`method to initialize SDK:
