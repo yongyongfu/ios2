@@ -48,7 +48,7 @@
 - (void)updateRoomName:(NSString *)roomName success:(TYSuccessHandler)success failure:(TYFailureError)failure;
 
 /**
- 添加设备
+ 添加设备到房间
  
  @param deviceId    设备Id
  @param success     操作成功回调
@@ -57,7 +57,7 @@
 - (void)addDeviceWithDeviceId:(NSString *)deviceId success:(TYSuccessHandler)success failure:(TYFailureError)failure;
 
 /**
- 移除设备
+ 从设备中移除设备
  
  @param deviceId    设备Id
  @param success     操作成功回调
@@ -67,7 +67,7 @@
 
 
 /**
- 添加群组
+ 添加群组到房间
  
  @param groupId     群组Id
  @param success     操作成功回调
@@ -76,7 +76,7 @@
 - (void)addGroupWithGroupId:(NSString *)groupId success:(TYSuccessHandler)success failure:(TYFailureError)failure;
 
 /**
- 移除群组
+ 从设备中移除群组
  
  @param groupId     群组Id
  @param success     操作成功回调

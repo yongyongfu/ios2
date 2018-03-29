@@ -18,6 +18,7 @@ typedef void (^TYSuccessList)(NSArray *list);
 typedef void (^TYSuccessBOOL)(BOOL result);
 typedef void (^TYSuccessID)(id result);
 typedef void (^TYSuccessInt)(int result);
+typedef void (^TYSuccessLongLong)(long long result);
 typedef void (^TYSuccessData)(NSData *data);
 
 typedef void (^TYFailureHandler)();

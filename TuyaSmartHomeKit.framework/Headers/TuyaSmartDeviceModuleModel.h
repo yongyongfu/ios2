@@ -41,6 +41,8 @@
 @property (nonatomic, strong) NSString     *bv;
 @property (nonatomic, strong) NSString     *pv;
 @property (nonatomic, strong) NSString     *verSw;
+@property (nonatomic, strong) NSString     *cadv;
+@property (nonatomic, strong) NSString     *cdv;
 
 @end
 

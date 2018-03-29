@@ -49,8 +49,10 @@ typedef enum : NSUInteger {
 // mesh
 @property (nonatomic, strong) NSString     *meshId;
 
+// homeId
 @property (nonatomic, assign) long long    homeId;
 
+// roomId
 @property (nonatomic, assign) long long    roomId;
 
 //主设备

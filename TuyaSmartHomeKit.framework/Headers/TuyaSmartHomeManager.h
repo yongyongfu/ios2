@@ -18,9 +18,6 @@
 
 @optional
 
-// 家庭的关系发生变化
-- (void)homeManagerDidUpdateHomes:(TuyaSmartHomeManager *)manager;
-
 // 添加一个家庭
 - (void)homeManager:(TuyaSmartHomeManager *)manager didAddHome:(TuyaSmartHomeModel *)home;
 
@@ -65,7 +62,7 @@
                   rooms:(NSArray <NSString *>*)rooms
                latitude:(double)latitude
               longitude:(double)longitude
-                success:(TYSuccessInt)success
+                success:(TYSuccessLongLong)success
                 failure:(TYFailureError)failure;
 
 /**

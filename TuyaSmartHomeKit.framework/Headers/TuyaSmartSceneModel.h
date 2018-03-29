@@ -62,7 +62,7 @@
 @property (nonatomic, assign) BOOL allOffline;
 
 /**
- 是否有设备被移除
+ 是否有设备被全部移除
  */
 @property (nonatomic, assign) BOOL deviceRemoved;
 
@@ -107,7 +107,7 @@
 - (BOOL)getAllOfflineStatus;
 
 /**
- 是否有设备被移除
+ 是否有设备被全部移除
 
  @return 移除状态
  */

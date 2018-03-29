@@ -18,7 +18,6 @@ typedef NS_ENUM(NSInteger, TYSceneConditionStatus)
     TYSceneConditionStatusTimeout,
 };
 
-//@class TYSceneConditionExtraModel;
 
 @interface TuyaSmartSceneConditionModel : TYModel
 
@@ -43,7 +42,7 @@ typedef NS_ENUM(NSInteger, TYSceneConditionStatus)
 @property (nonatomic, strong) NSString *entityName;
 
 /**
- 条件或设备类型（气象数据 = 3、设备数据 ！= 3）
+ 条件、定时、设备类型（气象数据 = 3、设备数据 = 1、定时 = 6）
  */
 @property (nonatomic, assign) NSInteger entityType;
 
@@ -65,6 +64,8 @@ typedef NS_ENUM(NSInteger, TYSceneConditionStatus)
 /**
  条件具体内容
  如：("$humidity","==","comfort") 或（“$dp1”，“==”，“1”）
+ 定时：{timezoneId = "Asia/Shanghai",loops = "0000000",time = "08:00",date = "20180308"}
+ loops = "0000000"  表示 ： 周一周二周三周四周五周六周日
  */
 @property (nonatomic, strong) NSArray *expr;
 
@@ -73,14 +74,13 @@ typedef NS_ENUM(NSInteger, TYSceneConditionStatus)
  */
 @property (nonatomic, assign) TYSceneConditionStatus status;
 
-
 /**
  温度的单位
  */
 @property (nonatomic, strong) NSMutableDictionary *extraInfo;
-//@property (nonatomic, strong) TYSceneConditionExtraModel *extraModel;
 
 @property (nonatomic, strong) id extraModel;
+
 /**
  城市名称
  */

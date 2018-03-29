@@ -35,7 +35,6 @@
 #import "TuyaSmartTimer.h"
 #import "TuyaSmartRequest.h"
 #import "TuyaSmartGroupDevListModel.h"
-#import "TuyaSmartDeviceShare.h"
 #import "TuyaSmartScene.h"
 #import "TuyaSmartSceneManager.h"
 #import "TuyaSmartFeedback.h"

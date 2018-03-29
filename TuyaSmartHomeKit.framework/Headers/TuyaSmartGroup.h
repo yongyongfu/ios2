@@ -72,8 +72,8 @@
  */
 + (void)getDevList:(NSString *)productId
             homeId:(long long)homeId
-                success:(void(^)(NSArray <TuyaSmartGroupDevListModel *> *list))success
-                failure:(TYFailureError)failure;
+           success:(void(^)(NSArray <TuyaSmartGroupDevListModel *> *list))success
+           failure:(TYFailureError)failure;
 
 /**
  *  根据产品ID和群组ID获取对应群组下的设备列表

@@ -74,7 +74,6 @@ typedef NS_ENUM(NSInteger, TYBLEMeshOperationStatus) {
 - (void)startScanWithName:(NSString *)name pwd:(NSString *)pwd active:(BOOL)active wifiAddress:(uint32_t)wifiAddress otaAddress:(uint32_t)otaAddress;
 
 - (void)activeMeshDevice;
-- (void)reConnectDevice;
 - (void)getLightAllStatus;
 - (BOOL)isConnected;
 - (void)getDeviceStatusAllWithAddress:(uint32_t)address type:(NSString *)type;
