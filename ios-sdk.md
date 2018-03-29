@@ -67,6 +67,24 @@ _CocoaPods建议更新至最新版本_
 
 至此，准备工作已经全部完毕，可以开始App开发啦。
 
+### 老版本升级（如果之前不是基于涂鸦智能SDK开发可以忽略）
+
+检测是否需要升级数据，从TuyaSDK 升级到TuyaHomeSDK，需要进行数据升级。
+如果需要升级，就调用upgradeVersion接口进行升级。
+
+
+```objc
+if ([TuyaSmartSDK sharedInstance].checkVersionUpgrade) {
+    [[TuyaSmartSDK sharedInstance] upgradeVersion:^{
+        
+    } failure:^(NSError *error) {
+        
+    }];
+}
+```
+
+
+
 ### 示例代码约定
 
 在以下示例代码中，如果没有特殊说明，所有实例均位于`ViewController`类的实现文件中
@@ -514,9 +532,309 @@ uid重置密码不需要验证码
 }
 ```
 
+## 家庭管理
+
+用户登录成功后需要去获取整个家庭列表的信息
+
+
+### 家庭列表信息变化的回调
+
+实现`TuyaSmartHomeManagerDelegate`代理协议后，可以在家庭列表更变的回调中进行处理。
+
+```objc
+#pragma mark - TuyaSmartHomeManagerDelegate
+
+
+// 添加一个家庭
+- (void)homeManager:(TuyaSmartHomeManager *)manager didAddHome:(TuyaSmartHomeModel *)home {
+    
+}
+
+// 删除一个家庭
+- (void)homeManager:(TuyaSmartHomeManager *)manager didRemoveHome:(long long)homeId {
+    
+}
+
+// MQTT连接成功
+- (void)serviceConnectedSuccess {
+    // 刷新当前家庭UI
+}
+```
+
+### 获取家庭列表
+
+```objc
+- (void)getHomeList {
+	
+	[self.homeManager getHomeListWithSuccess:^(NSArray<TuyaSmartHomeModel *> *homes) {
+        // homes 家庭列表
+    } failure:^(NSError *error) {
+        NSLog(@"get home list failure: %@", error);
+    }];
+}
+```
+
+### 添加家庭
+
+```objc
+- (void)addHome {
+	
+    [self.homeManager addHomeWithName:@"you_home_name"
+                          geoName:@"city_name"
+                            rooms:@[@"room_name"]
+                         latitude:lat
+                        longitude:lon
+                          success:^(double homeId) {
+                
+        // homeId 创建的家庭的homeId
+        NSLog(@"add home success");
+    } failure:^(NSError *error) {
+        NSLog(@"add home failure: %@", error);
+    }];
+}
+```
+
+## 单个家庭信息管理
+
+主要功能：用来获取和修改，解散家庭。获取，添加和删除家庭的成员。新增，解散房间，房间进行排序。
+
+单个家庭信息管理相关的所有功能对应`TuyaSmartHome`类，需要使用家庭Id进行初始化。错误的家庭Id可能会导致初始化失败，返回`nil`。
+
+<!--家庭Id指的是`TuyaSmartHomeModel`下的`homeId`字段，可以从[用户设备列表](#sync-device)中获取。-->
+
+### 单个家庭信息变化的回调
+
+实现`TuyaSmartHomeDelegate`代理协议后，可以在单个家庭信息更变的回调中进行处理。
+
+```objc
+- (void)initHome {
+    self.home = [TuyaSmartHome homeWithHomeId:homeId];
+    self.home.delegate = self;
+}
+
+#pragma mark - TuyaSmartHomeDelegate
+
+// 家庭的信息更新，例如name
+- (void)homeDidUpdateInfo:(TuyaSmartHome *)home {
+    [self reload];
+}
+
+// 家庭和房间关系变化
+- (void)homeDidUpdateRoomInfo:(TuyaSmartHome *)home {
+    [self reload];
+}
+
+// 我收到的共享设备列表变化
+- (void)homeDidUpdateSharedInfo:(TuyaSmartHome *)home {
+    [self reload];
+}
+
+// 房间信息变更，例如name
+- (void)home:(TuyaSmartHome *)home roomInfoUpdate:(TuyaSmartRoomModel *)room {
+    [self reload];
+}
+
+// 房间与设备，群组的关系变化
+- (void)home:(TuyaSmartHome *)home roomRelationUpdate:(TuyaSmartRoomModel *)room {
+    [self reload];
+}
+
+// 添加设备
+- (void)home:(TuyaSmartHome *)home didAddDeivice:(TuyaSmartDeviceModel *)device {
+    [self reload];
+}
+
+// 删除设备
+- (void)home:(TuyaSmartHome *)home didRemoveDeivice:(NSString *)devId {
+    [self reload];
+}
+
+// 设备信息更新，例如name
+- (void)home:(TuyaSmartHome *)home deviceInfoUpdate:(TuyaSmartDeviceModel *)device {
+    [self reload];
+}
+
+// 设备dp数据更新
+- (void)home:(TuyaSmartHome *)home device:(TuyaSmartDeviceModel *)device dpsUpdate:(NSDictionary *)dps {
+    [self reload];
+}
+
+// 添加群组
+- (void)home:(TuyaSmartHome *)home didAddGroup:(TuyaSmartGroupModel *)group {
+    [self reload];
+}
+
+// 删除群组
+- (void)home:(TuyaSmartHome *)home didRemoveGroup:(NSString *)groupId {
+    [self reload];
+}
+
+// 群组信息更新，例如name
+- (void)home:(TuyaSmartHome *)home groupInfoUpdate:(TuyaSmartGroupModel *)group {
+    [self reload];
+}
+```
+
+### 获取家庭的信息
+
+```objc
+- (void)getHomeDetailInfo {
+	
+	[self.home getHomeDetailWithSuccess:^(TuyaSmartHomeModel *homeModel) {
+        // homeModel 家庭信息
+        NSLog(@"get home detail success");
+    } failure:^(NSError *error) {
+        NSLog(@"get home detail failure: %@", error);
+    }];
+}
+```
+
+### 修改家庭信息
+
+```objc
+- (void)updateHomeInfo {
+    [self.home updateHomeInfoWithName:@"new_home_name" geoName:@"city_name" latitude:lat longitude:lon success:^{
+        NSLog(@"update home info success");
+    } failure:^(NSError *error) {
+        NSLog(@"update home info failure: %@", error);
+    }];
+}
+
+```
+
+### 解散家庭
+
+```objc
+- (void)dismissHome {
+	
+	[self.home dismissHomeWithSuccess:^() {
+        NSLog(@"dismiss home success");
+    } failure:^(NSError *error) {
+        NSLog(@"dismiss home failure: %@", error);
+    }];
+}
+```
+
+
+### 新增房间
+
+```objc
+- (void)addHomeRoom {
+    [self.home addHomeRoomWithName:@"room_name" success:^{
+        NSLog(@"add room success");
+    } failure:^(NSError *error) {
+        NSLog(@"add room failure: %@", error);
+    }];
+}
+```
+
+### 解散房间
+
+```objc
+- (void)removeHomeRoom {
+    [self.home removeHomeRoomWithRoomId:roomId success:^{
+        NSLog(@"remove room success");
+    } failure:^(NSError *error) {
+        NSLog(@"remove room failure: %@", error);
+    }];
+}
+```
+
+### 房间排序
+
+```objc
+- (void)sortHomeRoom {
+    [self.home sortRoomList:(NSArray<TuyaSmartRoomModel *> *) success:^{
+        NSLog(@"sort room success");
+    } failure:^(NSError *error) {
+        NSLog(@"sort room failure: %@", error);
+    }];   
+}
+```
+
+
+
+## 单个房间信息管理
+
+单个房间信息管理相关的所有功能对应`TuyaSmartRoom`类，需要使用roomId进行初始化。错误的roomId可能会导致初始化失败，返回`nil`。
+
+### 更新房间名字
+
+```objc
+- (void)updateRoomName {
+    [self.room updateRoomName:@"new_room_name" success:^{
+        NSLog(@"update room name success");
+    } failure:^(NSError *error) {
+        NSLog(@"update room name failure: %@", error);
+    }];
+}
+```
+
+### 添加设备到房间
+
+```objc
+- (void)addDevice {
+    [self.room addDeviceWithDeviceId:@"devId" success:^{
+        NSLog(@"add device to room success");
+    } failure:^(NSError *error) {
+        NSLog(@"add device to room failure: %@", error);
+    }];
+}
+```
+
+### 从房间中移除设备
+
+```objc
+- (void)removeDevice {
+    [self.room removeDeviceWithDeviceId:@"devId" success:^{
+        NSLog(@"remove device from room success");
+    } failure:^(NSError *error) {
+        NSLog(@"remove device from room failure: %@", error);
+    }];
+}
+```
+
+### 添加群组到房间
+
+```objc
+- (void)addGroup {
+    [self.room addGroupWithGroupId:@"groupId" success:^{
+        NSLog(@"add group to room success");
+    } failure:^(NSError *error) {
+        NSLog(@"add group to room failure: %@", error);
+    }];
+}
+```
+
+### 从房间中移除群组
+
+```objc
+- (void)removeGroup {
+    [self.room removeGroupWithGroupId:@"groupId" success:^{
+        NSLog(@"remove group from room success");
+    } failure:^(NSError *error) {
+        NSLog(@"remove group from room failure: %@", error);
+    }];
+}
+```
+
+### 批量修改房间与群组、设备的关系
+
+```objc
+- (void)saveBatchRoomRelation {
+    [self.room saveBatchRoomRelationWithDeviceList:(NSArray<TuyaSmartDeviceModel *> *) groupList:(NSArray<TuyaSmartGroupModel *> *) success:^{
+        NSLog(@"save batch room relation success");
+    } failure:^(NSError *error) {
+        NSLog(@"save batch room relation failure: %@", error);
+    }];
+}
+```
+
+
 ## 设备配网
 
 涂鸦硬件模块支持两种配网模式：快连模式（TLink，简称EZ模式）、热点模式（AP模式）。快连模式操作较为简便，建议在配网失败后，再使用热点模式作为备选方案。
+Zigbee 采用有线配网，不用输入Wifi配置信息
 
 **EZ模式配网流程：**
 
@@ -528,13 +846,17 @@ uid重置密码不需要验证码
 
 配网相关的所有功能对应`TuyaSmartActivator`类（单例）。
 
+**zigbee 有线配网**
+
+将zigbee网关重置 -> 手机连上和网关相同的热点 -> 手机发送激活指令 -> 设备收到激活信息 -> 设备进行激活 -> 配网成功
+
 ### 准备工作
 
 开始配网之前，SDK需要在联网状态下从涂鸦云获取配网Token，然后才可以开始EZ/AP模式配网。Token的有效期为5分钟，且配置成功后就会失效（再次配网需要重新获取）。
 
 ```
 - (void)getToken {
-	[[TuyaSmartActivator sharedInstance] getToken:^(NSString *token) {
+	[[TuyaSmartActivator sharedInstance] getTokenWithHomeId:homeId success:^(NSString *token) {
 		NSLog(@"getToken success: %@", token);
 		// TODO: startConfigWiFi
 	} failure:^(NSError *error) {
@@ -566,12 +888,37 @@ EZ模式配网：
     if (error) {
         //配网失败
     }	
-
 }
 
 ```
 
 AP模式配网与EZ类似，把`[TuyaSmartActivator startConfigWiFi:ssid:password:token:timeout:]`的第一个参数改为`TYActivatorModeAP`即可。注意`ssid`和`password`需要填写的是路由器的热点名称和密码，并不是设备的热点名称和密码。
+
+### zigbee 有线配网
+
+```objc
+- (void)startConfigWiFiToken:(NSString *)token {
+	// 设置 TuyaSmartActivator 的 delegate，并实现 delegate 方法
+	[TuyaSmartActivator sharedInstance].delegate = self;
+	
+	// 开始配网
+	[[TuyaSmartActivator sharedInstance] startConfigWiFiWithToken:token timeout:100];
+}
+
+#pragma mark - TuyaSmartActivatorDelegate
+- (void)activator:(TuyaSmartActivator *)activator didReceiveDevice:(TuyaSmartDeviceModel *)deviceModel error:(NSError *)error {
+	
+	if (!error && deviceModel) {
+		//配网成功
+    }
+    
+    if (error) {
+        //配网失败
+    }	
+
+}
+
+```
 
 ### 停止配网
 
@@ -581,6 +928,46 @@ AP模式配网与EZ类似，把`[TuyaSmartActivator startConfigWiFi:ssid:passwor
 - (void)stopConfigWifi {
 	[TuyaSmartActivator sharedInstance].delegate = nil;
 	[[TuyaSmartActivator sharedInstance] stopConfigWiFi];
+}
+```
+
+## zigbee 网关
+
+#### 激活ZigBee子设备
+
+```objc
+- (void)activeSubDevice {
+	// self.device = [TuyaSmartDevice deviceWithDeviceId:@"your_device_id"];
+	
+	[self.device activeSubDeviceWithSuccess:^{
+		NSLog(@"active sub device success");
+	} failure:^(NSError *error) {
+		NSLog(@"active sub device failure: %@", error);
+	}];
+}
+```
+
+#### 停止激活zigbee子设备
+
+```objc
+- (void)stopActiveSubDevice {
+	// self.device = [TuyaSmartDevice deviceWithDeviceId:@"your_device_id"];
+	
+	[self.device stopActiveSubDevice];
+	}
+```
+
+#### 获取zigbee网关下的子设备列表
+
+```objc
+- (void)getSubDeviceList {
+	// self.device = [TuyaSmartDevice deviceWithDeviceId:@"your_device_id"];
+	
+	[self.device getSubDeviceListFromCloudWithSuccess:^(NSArray<TuyaSmartDeviceModel *> *subDeviceList) {
+        NSLog(@"get sub device list success");
+    } failure:^(NSError *error) {
+        NSLog(@"get sub device list failure: %@", error);
+    }];
 }
 ```
 
@@ -784,142 +1171,104 @@ AP模式配网与EZ类似，把`[TuyaSmartActivator startConfigWiFi:ssid:passwor
 ## 共享设备
 
 我们提供了两种共享方式：
-一种是到用户的共享，主要用于把设备共享给家人，设备拥有者一旦把设备共享给了自己的家人，家人就拥有了该用户所有设备的控制权限。
-另一种是到设备的共享，有时候需要把某些设备共享给家人，这时可以只把相应的设备共享给朋友，朋友不会拥有其它设备的控制权限，并且可以设置
+一种是到家庭成员的共享，如果是家中的常住成员，将其设置为家庭成员，共享家中所有的设备，家庭成员就拥有了该家庭中所有设备的控制权限。
+另一种是到设备的共享，有时候需要把某些设备共享给家人，这时可以只把相应的设备共享给朋友，朋友不会拥有其它设备的控制权限，并且可以设置被共享的设备不能进行改名、移除设备、固件升级、恢复出厂设置等操作（只能发送设备控制指令、获取状态更新）。
 
-被共享的设备不能进行改名、移除设备、固件升级、恢复出厂设置等操作（只能发送设备控制指令、获取状态更新）。
+### 家庭成员共享 
 
-### 用户共享 （基于用户维度的共享）
+家庭成员共享相关的所有功能对应`TuyaSmartHomeMember`类
 
-用户共享相关的所有功能对应`TuyaSmartMember`类
-
-#### 添加共享
-
-手机、邮箱共享
+#### 添加家庭成员
 
 ```objc
 - (void)addShare {
-	// self.member = [[TuyaSmartMember alloc] init];
+	// self.homeMember = [[TuyaSmartHomeMember alloc] init];
 	
-	[self.member addNewMember:@"member_name" phoneCode:@"member_country_code" userAccount:@"member_phone_or_email" relationship:TYRelationshipFriend success:^{
-		NSLog(@"addNewMember success");
-	} failure:^(NSError *error) {
-		NSLog(@"addNewMember failure: %@", error);
-	}];
+	[self.homeMember addHomeMemberWithHomeId:homeId countryCode:@"your_country_code" account:@"account" name:@"name" isAdmin:YES success:^{
+        NSLog(@"addNewMember success");
+    } failure:^(NSError *error) {
+        NSLog(@"addNewMember failure: %@", error);
+    }];
 }
 ```
 
-UID共享
+####  获取家庭成员列表
 
-```objc
-- (void)addShare {
-	// self.member = [[TuyaSmartMember alloc] init];
-	
-	[self.member addNewMember:@"member_name" uid:@"member_unique_id" relationship:TYRelationshipFriend success:^{
-		NSLog(@"addNewMember success");
-	} failure:^(NSError *error) {
-		NSLog(@"addNewMember failure: %@", error);
-	}];
-}
-```
-
-####  获取共享列表
-
-获取共享列表（即这些人可以控制你的设备）：
 
 ```objc
 - (void)initMemberList {
-	// self.member = [[TuyaSmartMember alloc] init];
+	// self.homeMember = [[TuyaSmartHomeMember alloc] init];
 	
-	[self.member getMemberList:^(NSArray<TuyaSmartMemberModel *> *list) {
-		NSLog(@"getMemberList success: %@", list);
-	} failure:^{
-		NSLog(@"getMemberList failure");
-	}];
+	[self.homeMember getHomeMemberListWithHomeId:homeId success:^(NSArray<TuyaSmartHomeMemberModel *> *memberList) {
+        NSLog(@"getMemberList success: %@", memberList);
+    } failure:^(NSError *error) {
+        NSLog(@"getMemberList failure");
+    }];
 }
 ```
 
-获取收到的共享列表（即你可以控制他们共享的设备）：
 
-```objc
-- (void)initReceiveMemberList {
-	// self.member = [[TuyaSmartMember alloc] init];
-	
-	[self.member getReceiveMemberList:^(NSArray<TuyaSmartMemberModel *> *list) {
-		NSLog(@"getReceiveMemberList success: %@", list);
-	} failure:^{
-		NSLog(@"getReceiveMemberList failure");
-	}];
-}
-```
-
-#### 修改备注
-
-修改共享成员名称：
+#### 修改家庭成员的备注名称和是否是管理员
 
 ```objc
 - (void)modifyMemberName:(TuyaSmartMemberModel *)memberModel name:(NSString *)name {
-	// self.member = [[TuyaSmartMember alloc] init];
-	
-	[self.member modifyMemberName:memberModel.memberId name:name success:^{
-	    NSLog(@"modifyMemberName success");
-	} failure:^(NSError *error) {
-	    NSLog(@"modifyMemberName failure: %@", error);
-	}];
+	// self.homeMember = [[TuyaSmartHomeMember alloc] init];
+
+	[self.homeMember updateHomeMemberNameWithMemberId:memberModel.memberId name:name isAdmin:YES success:^{
+        NSLog(@"modifyMemberName success");
+    } failure:^(NSError *error) {
+        NSLog(@"modifyMemberName failure: %@", error);
+    }];
 }
 ```
 
-修改收到的共享成员名称：
+#### 删除家庭成员
 
-```objc
-- (void)modifyReceiveMemberName:(TuyaSmartMemberModel *)memberModel name:(NSString *)name {
-	// self.member = [[TuyaSmartMember alloc] init];
-	
-	[self.member modifyReceiveMemberName:memberModel.memberId name:name success:^{
-	    NSLog(@"modifyReceiveMemberName success");
-	} failure:^(NSError *error) {
-	    NSLog(@"modifyReceiveMemberName failure: %@", error);
-	}];
-```
-
-#### 删除共享
-
-删除共享后，你将不能使用对方的设备，或者对方将不能使用你的设备。
 
 ```objc
 - (void)removeMember:(TuyaSmartMemberModel *)memberModel {
-	// self.member = [[TuyaSmartMember alloc] init];
+	// self.homeMember = [[TuyaSmartHomeMember alloc] init];
 	
-	[self.member removeMember:memberModel.memberId success:^{
-	    NSLog(@"removeMember success");
-	} failure:^(NSError *error) {
-	    NSLog(@"removeMember failure: %@", error);
-	}];
+	[self.homeMember removeHomeMemberWithMemberId:memberModel.memberId success:^{
+        NSLog(@"removeMember success");
+    } failure:^(NSError *error) {
+        NSLog(@"removeMember failure: %@", error);
+    }];
 }
 ```
 
 
 ### 设备共享 （基于设备维度的共享）
 
-设备共享相关的所有功能对应`TuyaSmartDeviceShare`类
+设备共享相关的所有功能对应`TuyaSmartHomeDeviceShare`类
 
 #### 添加共享
+
 
 ```objc
 
 - (void)addMemberShare {
-	//self.shareService = [TuyaSmartDeviceShare new];
+	//self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 	
-    [self.shareService addMemberShare:@"country_code" userAccount:@"user_account" devIds:@"devId list" autoSharing:YES success:^(TuyaSmartShareMemberModel *model) {
-    
-		NSLog(@"addShare success");
-    
-	} failure:^(NSError *error) {
-	           
-		NSLog(@"addShare failure: %@", error);
+    [self.deviceShare addShareWithHomeId:homeId countryCode:@"your_country_code" userAccount:@"user_account" devIds:(NSArray<NSString *> *) success:^(TuyaSmartShareMemberModel *model) {
+        NSLog(@"addShare success");
+    } failure:^(NSError *error) {
+        NSLog(@"addShare failure: %@", error);
+    }];
+}
 	
-	}];
+```
+
+```objc
+
+- (void)addMemberShare {
+	//self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 	
+    [self.deviceShare addShareWithMemberId:memberId devIds:(NSArray<NSString *> *) success:^{
+        NSLog(@"addShare success");
+    } failure:^(NSError *error) {
+        NSLog(@"addShare failure: %@", error);
+    }];
 }
 	
 ```
@@ -932,9 +1281,9 @@ UID共享
 ```objc
 
 - (void)getShareMemberList {
-	//self.shareService = [TuyaSmartDeviceShare new];
+	//self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-	[self.shareService getShareMemberList:^(NSArray<TuyaSmartShareMemberModel *> *list) {
+	[self.deviceShare getShareMemberListWithHomeId:homeId success:^(NSArray<TuyaSmartShareMemberModel *> *list)
 	    
 		NSLog(@"getShareMemberList success");
 	
@@ -953,9 +1302,9 @@ UID共享
 ```objc
 
 - (void)getReceiveMemberList {
-	//self.shareService = [TuyaSmartDeviceShare new];
+	//self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-	[self.shareService getReceiveMemberList:^(NSArray<TuyaSmartShareMemberModel *> *list) {
+	[self.deviceShare getReceiveMemberListWithSuccess:^(NSArray<TuyaSmartShareMemberModel *> *list) {
 	    
 		NSLog(@"getReceiveMemberList success");
 	
@@ -975,9 +1324,9 @@ UID共享
 ```objc
 
 - (void)getShareMemberDetail {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService getShareMemberDetail:@"member_id" success:^(TuyaSmartShareMemberDetailModel *model) {
+    [self.deviceShare getShareMemberDetailWithMemberId:memberId success:^(TuyaSmartShareMemberDetailModel *model) {
     
     	NSLog(@"getShareMemberDetail success");
         
@@ -996,9 +1345,9 @@ UID共享
 ```objc
 
 - (void)getReceiveMemberDetail {
-    //self.shareService = [TuyaSmartDeviceShare new];
+    //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService getReceiveMemberDetail:@"member_id" success:^(TuyaSmartShareMemberDetailModel *model) {
+    [self.deviceShare getReceiveMemberDetailWithMemberId:memberId success:^(TuyaSmartReceiveMemberDetailModel *model) {
     
     	NSLog(@"getReceiveMemberDetail success");
         
@@ -1018,9 +1367,9 @@ UID共享
 ```objc
 
 - (void)removeShareMember {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService removeShareMember:@"member_id" success:^{
+    [self.deviceShare removeShareMemberWithMemberId:memberId success:^{
         
     	NSLog(@"removeShareMember success");
 
@@ -1040,9 +1389,9 @@ UID共享
 ```objc
 
 - (void)removeReceiveMember {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService removeReceiveMember:@"member_id" success:^{
+    [self.deviceShare removeReceiveShareMemberWithMemberId:memberId success:^{
         
     	NSLog(@"removeReceiveMember success");
 
@@ -1062,9 +1411,9 @@ UID共享
 ```objc
 
 - (void)updateShareMemberName {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService updateShareMemberName:@"member_id" name:@"name" success:^{
+    [self.deviceShare renameShareMemberNameWithMemberId:memberId name:@"new_name" success:^{
         
     	NSLog(@"updateShareMemberName success");
     	
@@ -1081,9 +1430,9 @@ UID共享
 ```objc
 
 - (void)updateReceiveMemberName {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService updateReceiveMemberName:@"member_id" name:@"name" success:^{
+    [self.deviceShare renameReceiveShareMemberNameWithMemberId:memberId name:@"new_name" success:^{
         
     	NSLog(@"updateReceiveMemberName success");
     	
@@ -1103,9 +1452,9 @@ UID共享
 ```objc
 
 - (void)addDeviceShare {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService addDeviceShare:@"member_id" devId:@"dev_id" success:^{
+    [self.deviceShare addDeviceShareWithHomeId:homeId countryCode:@"country_code" userAccount:@"user_account" devId:@"dev_id" success:^(TuyaSmartShareMemberModel *model) {
         
     	NSLog(@"addDeviceShare success");
             	
@@ -1119,14 +1468,15 @@ UID共享
      
 ```
 
+
 单设备删除共享
 
 ```objc
 
 - (void)removeDeviceShare {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService removeDeviceShare:@"member_id" devId:@"dev_id" success:^{
+    [self.deviceShare removeDeviceShareWithMemberId:memberId devId:@"dev_id" success:^{
         
     	NSLog(@"removeDeviceShare success");
             	
@@ -1140,14 +1490,14 @@ UID共享
 ```
 
 
-单设备删除共享 
+删除收到的共享设备 
 
 ```objc
 
 - (void)removeDeviceShare {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService removeDeviceShare:@"dev_id" success:^{
+    [self.deviceShare removeReceiveDeviceShareWithDevId:@"dev_id" success:^{
         
     	NSLog(@"removeDeviceShare success");
             	
@@ -1162,36 +1512,14 @@ UID共享
 ```
 
 
-#### 自动共享
-
-设置新添加设备是否自动共享
-
-```objc
-
-- (void)enableNewDeviceAutoShare {
-	 //self.shareService = [TuyaSmartDeviceShare new];
-		
-    [self.shareService enableNewDeviceAutoShare:YES memberId:@"member_id" success:^{
-        
-	 	NSLog(@"enableNewDeviceAutoShare success");
-	
-    } failure:^(NSError *error) {
-        
-    	NSLog(@"enableNewDeviceAutoShare failure: %@", error);
-
-   }];
-         
-}
-```
-
 #### 获取设备共享用户列表
 
 ```objc
 
 - (void)getDeviceShareMemberList {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-    [self.shareService getDeviceShareMemberList:@"dev_id" success:^(NSArray<TuyaSmartShareMemberModel *> *list) {
+    [self.deviceShare getDeviceShareMemberListWithDevId:@"dev_id" success:^(NSArray<TuyaSmartShareMemberModel *> *list) {
         
         NSLog(@"getDeviceShareMemberList success");
         
@@ -1205,14 +1533,22 @@ UID共享
          
 ```
 
-#### 获取当前用户所有可分享的设备
+#### 获取设备分享来自哪里
 
 ```objc
 
-- (void)getShareDeviceList {
-	 //self.shareService = [TuyaSmartDeviceShare new];
+- (void)getShareInfo {
+	 //self.deviceShare  = [[TuyaSmartHomeDeviceShare alloc] init];
 		
-	 NSArray *list = self.shareService.getShareDeviceList;
+	 [self.deviceShare getShareInfoWithDevId:@"dev_id" success:^(TuyaSmartReceivedShareUserModel *model) {
+	         
+        NSLog(@"get shareInfo success");
+        
+    } failure:^(NSError *error) {
+        
+        NSLog(@"get shareInfo failure: %@", error);
+	
+    }];
 	 
 }
          
@@ -1486,14 +1822,16 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 
 - 气象条件：包括温度、湿度、天气、PM2.5、空气质量、日落日出，用户选择气象条件时，可以选择当前城市。
 - 设备条件：指用户可预先选择一个设备的功能状态，当该设备达到该状态时，会触发当前场景里的任务，但同一设备不能同时作为条件和任务，避免操作冲突。
+- 定时条件：指可以按照指定的时间去执行预定的任务。
 
 ### 场景任务
-场景任务是指当该场景满足已经设定的气象或设备条件时，让一个或多个设备执行某种操作，对应`TuyaSmartSceneActionModel`类。
+场景任务是指当该场景满足已经设定的气象或设备条件时，让一个或多个设备执行某种操作，对应`TuyaSmartSceneActionModel`类。或者关闭、开启一个自动化（带有场景条件的就叫做自动化）
 
 ### 获取场景列表
 ```objc
+// 获取家庭下的场景列表
 - (void)getSmartSceneList {
-    [[TuyaSmartSceneManager sharedInstance] getSceneList:^(NSArray<TuyaSmartSceneModel *> *list) {
+    [[TuyaSmartSceneManager sharedInstance] getSceneListWithHomeId:homeId success:^(NSArray<TuyaSmartSceneModel *> *list) {
         NSLog(@"get scene list success %@:", list);
     } failure:^(NSError *error) {
         NSLog(@"get scene list failure: %@", error);
@@ -1502,12 +1840,15 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 ```
 ### 添加场景
 
-添加场景需要传入场景名称，条件（目前只支持一个条件），任务列表（至少一个任务），也可以只设置名称和任务，不设置条件，但是需要手动执行。构造条件可使用
-`[TuyaSmartSceneConditionModel initWithSceneDPModel:]`方法，构造任务可使用`[TuyaSmartSceneActionModel initWithSceneDPModel:]`方法。
+添加场景需要传入家庭的ID，场景名称，背景图片的url，是否显示在首页，条件列表（不同条件是或的关系），任务列表（至少一个任务），也可以只设置名称和任务，背景图片，不设置条件，但是需要手动执行。
+
+<!--构造条件可使用
+`[TuyaSmartSceneConditionModel initWithSceneDPModel:]`方法，构造任务可使用`[TuyaSmartSceneActionModel initWithSceneDPModel:]`方法。-->
 
 ```objc
 - (void)addSmartScene {
-    [TuyaSmartScene addNewScene:@"your_scene_name" condition:(TuyaSmartSceneConditionModel *)condition actionList:(NSArray<TuyaSmartSceneActionModel*> *)actionList success:^(TuyaSmartSceneModel *sceneModel) {
+
+    [TuyaSmartScene addNewSceneWithName:@"your_scene_name" homeId:homeId background:@"background_url" showFirstPage:YES conditionList:(NSArray<TuyaSmartSceneConditionModel *> *) actionList:(NSArray<TuyaSmartSceneActionModel *> *) success:^(TuyaSmartSceneModel *sceneModel) {
         NSLog(@"add scene success %@:", sceneModel);
     } failure:^(NSError *error) {
         NSLog(@"add scene failure: %@", error);
@@ -1522,7 +1863,7 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 ```objc
 - (void)modifySmartScene {
 //    self.smartScene = [TuyaSmartScene sceneWithSceneId:@"your_scene_id"];
-    [self.smartScene modifyScene:@"your_scene_name" condition:condition actionList:self.dataSource success:^{
+    [self.smartScene modifySceneWithName:name background:@"background_url" showFirstPage:YES condition:(NSArray<TuyaSmartSceneConditionModel *> *) actionList:(NSArray<TuyaSmartSceneActionModel *> *) success:^{
         NSLog(@"modify scene success");
     } failure:^(NSError *error) {
         NSLog(@"modify scene failure: %@", error);
@@ -1534,7 +1875,7 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 ```objc
 - (void)deleteSmartScene {
 //    self.smartScene = [TuyaSmartScene sceneWithSceneId:@"your_scene_id"];
-	[self.smartScene deleteScene:^{
+    [self.smartScene deleteSceneWithSuccess:^{
         NSLog(@"delete scene success");
     } failure:^(NSError *error) {
         NSLog(@"delete scene failure: %@", error);
@@ -1545,20 +1886,45 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 ```objc
 - (void)executeSmartScene {
 //    self.smartScene = [TuyaSmartScene sceneWithSceneId:@"your_scene_id"];
-	[self.smartScene exeuteScene:^{
+	[self.smartScene executeSceneWithSuccess:^{
    		NSLog(@"execute scene success");    
     } failure:^(NSError *error) {
         NSLog(@"execute scene failure: %@", error);
     }];
 }
 ```
+
+### 开启场景（只有至少带有一个条件的场景才可以开启和失效场景）
+```objc
+- (void)enableSmartScene {
+//    self.smartScene = [TuyaSmartScene sceneWithSceneId:@"your_scene_id"];
+	[self.smartScene enableSceneWithSuccess:^{
+   		NSLog(@"enable scene success");    
+    } failure:^(NSError *error) {
+        NSLog(@"enable scene failure: %@", error);
+    }];
+}
+```
+
+### 失效场景（只有至少带有一个条件的场景才可以开启和失效场景）
+```objc
+- (void)disableSmartScene {
+//    self.smartScene = [TuyaSmartScene sceneWithSceneId:@"your_scene_id"];
+	[self.smartScene disableSceneWithSuccess:^{
+   		NSLog(@"disable scene success");    
+    } failure:^(NSError *error) {
+        NSLog(@"disable scene failure: %@", error);
+    }];
+}
+```
 ### 获取条件列表
 
 获取条件列表，如温度、湿度、天气、PM2.5、日落日出等，注意：设备也可作为条件。
+条件中的温度分为摄氏度和华氏度，根据需求传入需要的数据。
 
 ```objc
 - (void)getConditionList {
-	[[TuyaSmartSceneManager sharedInstance] getConditionList:^(NSArray<TuyaSmartSceneDPModel *> *list) {
+    [[TuyaSmartSceneManager sharedInstance] getConditionListWithFahrenheit:YES success:^(NSArray<TuyaSmartSceneDPModel *> *list) {
         NSLog(@"get condition list success:%@", list);
     } failure:^(NSError *error) {
         NSLog(@"get condition list failure: %@", error);
@@ -1571,7 +1937,7 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 
 ```objc
 - (void)getActionDeviceList {
-	[[TuyaSmartSceneManager sharedInstance] getActionDeviceList:^(NSArray<TuyaSmartDeviceModel *> *list) {
+	[[TuyaSmartSceneManager sharedInstance] getActionDeviceListWithHomeId:homeId success:^(NSArray<TuyaSmartDeviceModel *> *list) {
 		NSLog(@"get action device list success:%@", list);
 	} failure:^(NSError *error) {
 		NSLog(@"get action device list failure: %@", error);
@@ -1584,7 +1950,7 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 
 ```objc
 - (void)getConditionDeviceList {
-	[[TuyaSmartSceneManager sharedInstance] getConditionDeviceList:^(NSArray<TuyaSmartDeviceModel *> *list) {
+	[[TuyaSmartSceneManager sharedInstance] getConditionDeviceListWithHomeId:homeId success:^(NSArray<TuyaSmartDeviceModel *> *list) {
 		NSLog(@"get condition device list success:%@", list);
 	} failure:^(NSError *error) {
 		NSLog(@"get condition device list failure: %@", error);
@@ -1652,6 +2018,19 @@ _注：loops: @"0000000", 每一位 0:关闭,1:开启, 从左至右依次表示:
 	} failure:^(NSError *error) {
 		NSLog(@"get city info failure:%@", error);       
 	}];
+}
+```
+
+### 场景排序
+
+
+```objc
+- (void) sortScene {
+	[[TuyaSmartSceneManager sharedInstance] sortSceneWithHomeId:homeId sceneIdList:(NSArray<NSString *> *) success:^{
+        NSLog(@"sort scene success"); 
+    } failure:^(NSError *error) {
+        NSLog(@"sort scene failure:%@", error);
+    }];
 }
 ```
 
